@@ -1,6 +1,6 @@
 from google import genai
 
-client = genai.Client(api_key="AIzaSyBoywC1-91_-s5md9HKkRQFxpK1j49tNQ0")
+client = genai.Client(api_key="")
 
 # Define a reusable prompt template
 chatbot_prompt = """

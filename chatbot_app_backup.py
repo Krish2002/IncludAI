@@ -232,7 +232,7 @@ st.markdown(f"""
 # Initialize Google Generative AI
 @st.cache_resource
 def init_genai():
-    return genai.Client(api_key="AIzaSyBoywC1-91_-s5md9HKkRQFxpK1j49tNQ0")
+    return genai.Client(api_key="")
 
 # Define the chatbot prompt
 CHATBOT_PROMPT = """

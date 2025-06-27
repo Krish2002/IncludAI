@@ -1,1 +1,1 @@
-gemini = "AIzaSyBoywC1-91_-s5md9HKkRQFxpK1j49tNQ0"
+gemini = ""

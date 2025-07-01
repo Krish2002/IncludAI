@@ -1,4 +1,10 @@
 import streamlit as st
+import sys
+import os
+
+# Add the chatbot directory to the path so imports work
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from config import PAGE_CONFIG
 from ui_components import apply_custom_css, render_header, render_message, render_chat_input
 from ai_service import get_bot_response
@@ -18,6 +24,10 @@ def main():
     if "messages" not in st.session_state:
         st.session_state.messages = []
     
+    # Initialize input counter for unique keys
+    if "input_counter" not in st.session_state:
+        st.session_state.input_counter = 0
+    
     # Display messages
     for message in st.session_state.messages:
         render_message(message)
@@ -36,6 +46,9 @@ def main():
         
         # Add bot response to chat
         st.session_state.messages.append({"role": "assistant", "content": bot_response})
+        
+        # Increment input counter to force a new input field on next render
+        st.session_state.input_counter += 1
         
         # Rerun to refresh the page
         st.rerun()

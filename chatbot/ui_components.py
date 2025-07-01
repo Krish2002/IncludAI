@@ -1,4 +1,10 @@
 import streamlit as st
+import sys
+import os
+
+# Add the chatbot directory to the path so imports work
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from config import COMPANY_NAME, COMPANY_DESCRIPTION, COMPANY_LOGO_URL
 from utils import get_logo_base64
 
@@ -158,9 +164,11 @@ def render_chat_input():
         col1, col2 = st.columns([4, 1])
         
         with col1:
+            # Use dynamic key based on counter to force new input field
+            input_key = f"user_input_{st.session_state.get('input_counter', 0)}"
             user_input = st.text_input(
                 "",
-                key="user_input",
+                key=input_key,
                 placeholder="Type your message...",
                 label_visibility="collapsed"
             )

@@ -1,7 +1,12 @@
 import streamlit as st
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Google AI API Configuration
-GOOGLE_API_KEY = ""
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyBoywC1-91_-s5md9HKkRQFxpK1j49tNQ0")
 AI_MODEL = "gemini-2.5-flash"
 
 # Company Information
@@ -17,7 +22,9 @@ CONTACT_INFO = {
 }
 
 # File Paths
-FAQ_FILE_PATH = "electronics_company_faq.txt"
+# Get the directory where this config file is located
+CHATBOT_DIR = os.path.dirname(os.path.abspath(__file__))
+FAQ_FILE_PATH = os.path.join(CHATBOT_DIR, "electronics_company_faq.txt")
 LOGO_FILE_PATH = "logo_1.jpeg"
 
 # Page Configuration

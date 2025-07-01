@@ -149,6 +149,20 @@ document.addEventListener('DOMContentLoaded', () => {
         el.classList.add('fade-in');
         observer.observe(el);
     });
+    
+    // Chatbot link handling
+    const chatbotLink = document.getElementById('chatbot-link');
+    if (chatbotLink) {
+        chatbotLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Show a notification that the chatbot will be deployed
+            showNotification('Chatbot deployment in progress! Once deployed, this will open our AI chatbot. Check the deployment guide for setup instructions.', 'info');
+            
+            // For now, you can replace this URL with your actual Streamlit app URL once deployed
+            // window.open('https://your-app-name.streamlit.app', '_blank');
+        });
+    }
 });
 
 // Form input focus effects

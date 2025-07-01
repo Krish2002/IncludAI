@@ -1,5 +1,11 @@
 import re
 import streamlit as st
+import sys
+import os
+
+# Add the chatbot directory to the path so imports work
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from config import FAQ_FILE_PATH
 
 def load_faq_data():

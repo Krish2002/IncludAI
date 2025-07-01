@@ -6,11 +6,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Google AI API Configuration
-try:
-    GOOGLE_API_KEY = st.secrets["GEMINI_API_KEY"]
-except:
-    # Fallback to environment variable for local development
-    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+
+GOOGLE_API_KEY = st.secrets["GEMINI_API_KEY"]
+
 AI_MODEL = "gemini-2.5-flash"
 
 # Company Information

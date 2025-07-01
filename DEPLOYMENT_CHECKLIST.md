@@ -2,7 +2,7 @@
 
 ## Pre-deployment Steps
 - [ ] All files committed to Git
-- [ ] API key configured as environment variable
+- [ ] API key configured in Streamlit secrets
 - [ ] Requirements.txt updated
 - [ ] Streamlit config created
 
@@ -14,7 +14,7 @@
 3. Click "New app"
 4. Select your repository
 5. Set path to: `chatbot/streamlit_app.py`
-6. Add environment variable: GOOGLE_API_KEY = your_api_key
+6. Add secret: GEMINI_API_KEY = your_api_key
 7. Click "Deploy"
 
 ### For Website (Netlify):

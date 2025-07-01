@@ -23,10 +23,12 @@ This guide will help you deploy your **complete website with integrated chatbot*
    - Main file path: `chatbot/streamlit_app.py`
    - Click "Deploy"
 
-3. **Configure Environment Variables:**
-   - In your app settings, add:
-     - Key: `GOOGLE_API_KEY`
-     - Value: Your Google AI API key
+3. **Configure Secrets:**
+   - In your app settings, go to "Secrets"
+   - Add your API key in this format:
+   ```toml
+   GEMINI_API_KEY = "your-google-ai-api-key-here"
+   ```
 
 4. **Note Your Streamlit URL:**
    - It will be: `https://[your-app-name].streamlit.app`
@@ -90,7 +92,7 @@ You'll have:
 
 ### If chatbot doesn't load in iframe:
 - Check if Streamlit app is running
-- Verify environment variables are set
+- Verify secrets are configured correctly in Streamlit Cloud
 - Check browser console for CORS errors
 - Try accessing the Streamlit URL directly
 
@@ -115,6 +117,7 @@ If you encounter issues:
 ## 🎯 Success Checklist
 
 - [ ] Streamlit chatbot deployed and accessible
+- [ ] API key configured in Streamlit secrets
 - [ ] Netlify website deployed and accessible  
 - [ ] Chatbot URLs updated in HTML files
 - [ ] Chatbot loads correctly in website iframe

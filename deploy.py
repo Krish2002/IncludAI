@@ -61,8 +61,11 @@ def check_api_key():
     if os.path.exists(config_file):
         with open(config_file, 'r', encoding='utf-8') as f:
             content = f.read()
-            if "GOOGLE_API_KEY" in content and "os.getenv" in content:
-                print("API key configured to use environment variables")
+            if "st.secrets" in content:
+                print("API key configured to use Streamlit secrets (recommended)")
+                return True
+            elif "GOOGLE_API_KEY" in content and "os.getenv" in content:
+                print("API key configured to use environment variables (fallback)")
                 return True
             else:
                 print("API key may be hardcoded - check config.py")

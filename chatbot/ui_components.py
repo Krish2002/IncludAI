@@ -159,12 +159,41 @@ def render_message(message):
         """, unsafe_allow_html=True)
 
 def render_faq_suggestions(faq_questions):
-    """Render FAQ suggestion buttons and return the clicked question, if any."""
-    st.markdown("#### Suggestions")
-    cols = st.columns(2)
+    """Render FAQ suggestion buttons, styled and right-aligned like user messages."""
+    st.markdown("""
+    <style>
+    .suggestion-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        margin-bottom: 1rem;
+    }
+    .suggestion-btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 18px;
+        padding: 0.3rem 1rem;
+        margin: 0.2rem;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        display: inline-block;
+    }
+    .suggestion-btn:hover {
+        background: #0056b3;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="suggestion-row">', unsafe_allow_html=True)
     for idx, question in enumerate(faq_questions):
-        if cols[idx % 2].button(question):
+        btn = st.button(question, key=f"suggestion_{idx}")
+        if btn:
+            st.markdown('</div>', unsafe_allow_html=True)
             return question
+    st.markdown('</div>', unsafe_allow_html=True)
     return None
 
 def render_chat_input(prefill=""):

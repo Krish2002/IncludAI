@@ -159,14 +159,15 @@ def render_message(message):
         """, unsafe_allow_html=True)
 
 def render_faq_suggestions(faq_questions):
-    """Render FAQ suggestion buttons, styled and right-aligned like user messages."""
+    """Render FAQ suggestion buttons as a right-aligned, filled, compact bubble."""
     st.markdown("""
     <style>
-    .suggestion-row {
+    .suggestion-bubble {
         display: flex;
         flex-wrap: wrap;
         justify-content: flex-end;
         margin-bottom: 1rem;
+        margin-right: 0;
     }
     .suggestion-btn {
         background: #007bff;
@@ -174,7 +175,7 @@ def render_faq_suggestions(faq_questions):
         border: none;
         border-radius: 18px;
         padding: 0.3rem 1rem;
-        margin: 0.2rem;
+        margin: 0.2rem 0.2rem 0.2rem 0;
         font-size: 0.95rem;
         cursor: pointer;
         transition: background 0.2s;
@@ -187,13 +188,15 @@ def render_faq_suggestions(faq_questions):
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="suggestion-row">', unsafe_allow_html=True)
-    for idx, question in enumerate(faq_questions):
-        btn = st.button(question, key=f"suggestion_{idx}")
-        if btn:
-            st.markdown('</div>', unsafe_allow_html=True)
-            return question
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.form(key="suggestion_form", clear_on_submit=True):
+        st.markdown('<div class="suggestion-bubble">', unsafe_allow_html=True)
+        clicked = None
+        for idx, question in enumerate(faq_questions):
+            if st.form_submit_button(question, key=f"suggestion_{idx}"):
+                clicked = question
+        st.markdown('</div>', unsafe_allow_html=True)
+        if clicked:
+            return clicked
     return None
 
 def render_chat_input(prefill=""):

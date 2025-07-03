@@ -159,16 +159,21 @@ def render_message(message):
         """, unsafe_allow_html=True)
 
 def render_faq_suggestions(faq_questions):
-    """Render up to 6 FAQ suggestion buttons in a horizontal row using columns, with soft pineapple yellow background for all buttons."""
+    """Render up to 8 FAQ suggestion buttons in a grid with 4 per row, pineapple yellow background, and wrapping."""
     st.markdown("""
     <style>
+    .suggestion-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(120px, 1fr));
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
     .suggestion-btn, .stButton > button {
         background: #FFE066 !important;
         color: #333 !important;
         border: none;
         border-radius: 18px !important;
         padding: 0.3rem 1.5rem !important;
-        margin: 0.2rem 0.5rem 0.2rem 0 !important;
         font-size: 0.95rem !important;
         min-width: 120px;
         cursor: pointer;
@@ -184,14 +189,13 @@ def render_faq_suggestions(faq_questions):
     </style>
     """, unsafe_allow_html=True)
 
-    # Only show up to 6 suggestions
-    faq_questions = faq_questions[:6]
-    cols = st.columns(len(faq_questions))
+    faq_questions = faq_questions[:8]
     clicked = None
+    st.markdown('<div class="suggestion-grid">', unsafe_allow_html=True)
     for idx, question in enumerate(faq_questions):
-        with cols[idx]:
-            if st.button(question, key=f"suggestion_{idx}"):
-                clicked = question
+        if st.button(question, key=f"suggestion_{idx}"):
+            clicked = question
+    st.markdown('</div>', unsafe_allow_html=True)
     if clicked:
         return clicked
     return None

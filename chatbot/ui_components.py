@@ -158,7 +158,16 @@ def render_message(message):
         </div>
         """, unsafe_allow_html=True)
 
-def render_chat_input():
+def render_faq_suggestions(faq_questions):
+    """Render FAQ suggestion buttons and return the clicked question, if any."""
+    st.markdown("#### Suggestions")
+    cols = st.columns(2)
+    for idx, question in enumerate(faq_questions):
+        if cols[idx % 2].button(question):
+            return question
+    return None
+
+def render_chat_input(prefill=""):
     """Render the chat input form"""
     with st.form(key="user_input_form"):
         col1, col2 = st.columns([4, 1])
@@ -169,6 +178,7 @@ def render_chat_input():
             user_input = st.text_input(
                 "",
                 key=input_key,
+                value=prefill,
                 placeholder="Type your message...",
                 label_visibility="collapsed"
             )

@@ -2,6 +2,7 @@ import streamlit as st
 import sys
 import os
 import tempfile
+from streamlit_mic_recorder import mic_recorder
 
 # Add the chatbot directory to the path so imports work
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -130,6 +131,16 @@ def apply_custom_css():
             background: rgba(255, 255, 255, 0.9);
             border-radius: 10px;
             border: 2px solid #007bff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        
+        .mic-icon {{
+            font-size: 2.5rem;
+            color: #007bff;
+            cursor: pointer;
+            margin-right: 1rem;
         }}
         
         .voice-status {{
@@ -214,115 +225,66 @@ def render_faq_suggestions(faq_questions):
         return clicked
     return None
 
-def transcribe_audio_with_whisper(audio_file_path):
-    """Transcribe audio using OpenAI Whisper API if available"""
-    # Check if Whisper is enabled in config
-    if not VOICE_INPUT_CONFIG.get("use_whisper", True):
-        return None, "Automatic transcription is disabled in configuration."
-    
-    try:
-        import openai
-        from openai import OpenAI
-        
-        # Check if OpenAI API key is available
-        api_key = os.getenv('OPENAI_API_KEY')
-        if not api_key:
-            return None, "OpenAI API key not found. Please set OPENAI_API_KEY environment variable."
-        
-        client = OpenAI(api_key=api_key)
-        
-        with open(audio_file_path, "rb") as audio_file:
-            transcript = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file
-            )
-        
-        return transcript.text, None
-        
-    except ImportError:
-        return None, "OpenAI package not installed. Run: pip install openai"
-    except Exception as e:
-        return None, f"Transcription error: {str(e)}"
-
 def render_voice_input():
-    """Render voice input section with file upload for audio files"""
+    """Minimalistic voice input: mic icon to record, transcribe with Whisper, and return transcript."""
     st.markdown("""
     <div class="voice-input-section">
-        <h4>🎤 Voice Input</h4>
-        <p>Upload an audio file to transcribe your message</p>
+        <span class="mic-icon">🎤</span>
+        <span><b>Voice Input</b> &nbsp; <small>Click the mic to record your message</small></span>
     </div>
     """, unsafe_allow_html=True)
-    
-    # Get supported formats from config
-    supported_formats = VOICE_INPUT_CONFIG.get("supported_formats", ["wav", "mp3", "m4a", "ogg"])
-    max_file_size = VOICE_INPUT_CONFIG.get("max_file_size_mb", 25)
-    
-    # File uploader for audio files
-    uploaded_file = st.file_uploader(
-        f"Choose an audio file (max {max_file_size}MB)",
-        type=supported_formats,
-        key="audio_uploader",
-        help=f"Upload an audio file ({', '.join(supported_formats)}) to transcribe your message"
+
+    audio = mic_recorder(
+        key="mic_recorder",
+        use_container_width=True,
+        sample_rate=16000,
+        chunk_length_s=10,
+        text="",
+        icon_name="microphone",
+        icon_size="2x"
     )
-    
     transcript = ""
-    
-    if uploaded_file is not None:
-        # Check file size
-        file_size_mb = uploaded_file.size / (1024 * 1024)
-        if file_size_mb > max_file_size:
-            st.error(f"File too large! Maximum size is {max_file_size}MB. Your file is {file_size_mb:.1f}MB.")
-            return ""
-        
-        # Show file info
-        st.info(f"📁 File uploaded: {uploaded_file.name} ({file_size_mb:.1f}MB)")
-        
-        # Show processing status
-        with st.status("Processing audio...", expanded=True) as status:
-            st.write("Transcribing your audio file...")
-            
+    if audio:
+        with st.status("Transcribing your voice...", expanded=True) as status:
             try:
-                # Save uploaded file to temporary file
-                with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmpfile:
-                    tmpfile.write(uploaded_file.getvalue())
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
+                    tmpfile.write(audio['bytes'])
                     tmpfile.flush()
-                    
-                    # Try automatic transcription with Whisper
-                    auto_transcript, error_msg = transcribe_audio_with_whisper(tmpfile.name)
-                    
-                    if auto_transcript:
-                        transcript = auto_transcript
-                        status.update(label="✅ Automatic transcription complete!", state="complete")
+                    transcript, error_msg = transcribe_audio_with_whisper(tmpfile.name)
+                    if transcript:
+                        status.update(label="✅ Transcription complete!", state="complete")
                         st.success(f"**Transcribed:** {transcript}")
                     else:
-                        # Fallback to manual transcription
-                        st.warning(f"⚠️ {error_msg}")
-                        st.info("Please type your message manually below:")
-                        
-                        # Provide a text input for manual transcription
-                        manual_transcript = st.text_input(
-                            "Type your message here:",
-                            key="manual_transcript",
-                            placeholder="Type what you said in the audio..."
-                        )
-                        
-                        if manual_transcript:
-                            transcript = manual_transcript
-                            status.update(label="✅ Manual transcription complete!", state="complete")
-                            st.success(f"**Message:** {transcript}")
-                
+                        status.update(label="❌ Transcription error", state="error")
+                        st.error(error_msg)
             except Exception as e:
                 status.update(label="❌ Error processing audio", state="error")
                 st.error(f"An error occurred while processing the audio: {e}")
             finally:
-                # Clean up temporary file
                 if 'tmpfile' in locals():
                     try:
                         os.unlink(tmpfile.name)
                     except:
                         pass
-    
     return transcript
+
+def transcribe_audio_with_whisper(audio_file_path):
+    """Transcribe audio using OpenAI Whisper API if available"""
+    if not VOICE_INPUT_CONFIG.get("use_whisper", True):
+        return None, "Automatic transcription is disabled in configuration."
+    try:
+        from openai import OpenAI
+        client = OpenAI()
+        with open(audio_file_path, "rb") as audio_file:
+            translation = client.audio.translations.create(
+                model="whisper-1",
+                file=audio_file,
+            )
+        return translation.text, None
+    except ImportError:
+        return None, "OpenAI package not installed. Run: pip install openai"
+    except Exception as e:
+        return None, f"Transcription error: {str(e)}"
 
 def render_chat_input(prefill=""):
     """Render the chat input form"""

@@ -159,16 +159,9 @@ def render_message(message):
         """, unsafe_allow_html=True)
 
 def render_faq_suggestions(faq_questions):
-    """Render up to 6 FAQ suggestion buttons in a horizontal row, wrapping to multiple lines if needed, left-aligned."""
+    """Render up to 6 FAQ suggestion buttons in a horizontal row using columns."""
     st.markdown("""
     <style>
-    .suggestion-bubble {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-        margin-bottom: 1rem;
-        margin-right: 0;
-    }
     .suggestion-btn {
         background: #007bff;
         color: white;
@@ -189,12 +182,14 @@ def render_faq_suggestions(faq_questions):
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="suggestion-bubble">', unsafe_allow_html=True)
+    # Only show up to 6 suggestions
+    faq_questions = faq_questions[:6]
+    cols = st.columns(len(faq_questions))
     clicked = None
-    for idx, question in enumerate(faq_questions[:6]):
-        if st.button(question, key=f"suggestion_{idx}"):
-            clicked = question
-    st.markdown('</div>', unsafe_allow_html=True)
+    for idx, question in enumerate(faq_questions):
+        with cols[idx]:
+            if st.button(question, key=f"suggestion_{idx}"):
+                clicked = question
     if clicked:
         return clicked
     return None

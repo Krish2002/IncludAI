@@ -41,13 +41,20 @@ def main():
     for message in st.session_state.messages:
         render_message(message)
     
-    # Load FAQ data and generate suggestions
-    faq_data = load_faq_data()
-    faq_questions = [item['question'] for item in faq_data][:8]
-    selected_question = render_faq_suggestions(faq_questions)
-    if selected_question:
-        st.session_state["prefill_input"] = selected_question
-    prefill = st.session_state.pop("prefill_input", "") if "prefill_input" in st.session_state else ""
+    # Only show FAQ suggestions if only the welcome message is present
+    show_suggestions = (
+        len(st.session_state.messages) == 1 and
+        st.session_state.messages[0]["role"] == "assistant"
+    )
+    prefill = ""
+    if show_suggestions:
+        faq_data = load_faq_data()
+        faq_questions = [item['question'] for item in faq_data][:8]
+        selected_question = render_faq_suggestions(faq_questions)
+        if selected_question:
+            prefill = selected_question
+    else:
+        prefill = st.session_state.pop("prefill_input", "") if "prefill_input" in st.session_state else ""
     
     # Render chat input
     user_input, submit_button = render_chat_input(prefill)

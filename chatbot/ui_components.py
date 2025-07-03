@@ -234,15 +234,7 @@ def render_voice_input():
     </div>
     """, unsafe_allow_html=True)
 
-    audio = mic_recorder(
-        key="mic_recorder",
-        use_container_width=True,
-        sample_rate=16000,
-        chunk_length_s=10,
-        text="",
-        icon_name="microphone",
-        icon_size="2x"
-    )
+    audio = mic_recorder(key="mic_recorder")
     transcript = ""
     if audio:
         with st.status("Transcribing your voice...", expanded=True) as status:

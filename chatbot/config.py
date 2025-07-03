@@ -23,14 +23,6 @@ CONTACT_INFO = {
     "live_chat": "Mon–Sat, 9 AM to 8 PM"
 }
 
-# Voice Input Configuration
-VOICE_INPUT_CONFIG = {
-    "enabled": True,  # Set to False to disable voice input
-    "use_whisper": True,  # Set to False to disable automatic transcription
-    "supported_formats": ["wav", "mp3", "m4a", "ogg"],
-    "max_file_size_mb": 25
-}
-
 # File Paths
 # Get the directory where this config file is located
 CHATBOT_DIR = os.path.dirname(os.path.abspath(__file__))

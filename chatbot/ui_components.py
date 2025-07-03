@@ -1,13 +1,11 @@
 import streamlit as st
 import sys
 import os
-import tempfile
-from streamlit_mic_recorder import mic_recorder
 
 # Add the chatbot directory to the path so imports work
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import COMPANY_NAME, COMPANY_DESCRIPTION, COMPANY_LOGO_URL, VOICE_INPUT_CONFIG
+from config import COMPANY_NAME, COMPANY_DESCRIPTION, COMPANY_LOGO_URL
 from utils import get_logo_base64
 
 def apply_custom_css():
@@ -125,30 +123,6 @@ def apply_custom_css():
             padding: 0.5rem 1rem;
         }}
         
-        .voice-input-section {{
-            margin: 1rem 0;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 10px;
-            border: 2px solid #007bff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }}
-        
-        .mic-icon {{
-            font-size: 2.5rem;
-            color: #007bff;
-            cursor: pointer;
-            margin-right: 1rem;
-        }}
-        
-        .voice-status {{
-            margin: 0.5rem 0;
-            padding: 0.5rem;
-            border-radius: 5px;
-        }}
-        
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         header {{visibility: hidden;}}
@@ -224,59 +198,6 @@ def render_faq_suggestions(faq_questions):
     if clicked:
         return clicked
     return None
-
-def render_voice_input():
-    """Minimalistic voice input: mic icon to record, transcribe with Whisper, and return transcript."""
-    st.markdown("""
-    <div class="voice-input-section">
-        <span class="mic-icon">🎤</span>
-        <span><b>Voice Input</b> &nbsp; <small>Click the mic to record your message</small></span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    audio = mic_recorder(key="mic_recorder")
-    transcript = ""
-    if audio:
-        with st.status("Transcribing your voice...", expanded=True) as status:
-            try:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
-                    tmpfile.write(audio['bytes'])
-                    tmpfile.flush()
-                    transcript, error_msg = transcribe_audio_with_whisper(tmpfile.name)
-                    if transcript:
-                        status.update(label="✅ Transcription complete!", state="complete")
-                        st.success(f"**Transcribed:** {transcript}")
-                    else:
-                        status.update(label="❌ Transcription error", state="error")
-                        st.error(error_msg)
-            except Exception as e:
-                status.update(label="❌ Error processing audio", state="error")
-                st.error(f"An error occurred while processing the audio: {e}")
-            finally:
-                if 'tmpfile' in locals():
-                    try:
-                        os.unlink(tmpfile.name)
-                    except:
-                        pass
-    return transcript
-
-def transcribe_audio_with_whisper(audio_file_path):
-    """Transcribe audio using OpenAI Whisper API if available"""
-    if not VOICE_INPUT_CONFIG.get("use_whisper", True):
-        return None, "Automatic transcription is disabled in configuration."
-    try:
-        from openai import OpenAI
-        client = OpenAI()
-        with open(audio_file_path, "rb") as audio_file:
-            translation = client.audio.translations.create(
-                model="whisper-1",
-                file=audio_file,
-            )
-        return translation.text, None
-    except ImportError:
-        return None, "OpenAI package not installed. Run: pip install openai"
-    except Exception as e:
-        return None, f"Transcription error: {str(e)}"
 
 def render_chat_input(prefill=""):
     """Render the chat input form"""

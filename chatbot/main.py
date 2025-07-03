@@ -52,7 +52,14 @@ def main():
         faq_questions = [item['question'] for item in faq_data][:8]
         selected_question = render_faq_suggestions(faq_questions)
         if selected_question:
-            prefill = selected_question
+            # Add the selected question as a user message
+            st.session_state.messages.append({"role": "user", "content": selected_question})
+            # Get bot response
+            with st.spinner(""):
+                bot_response = get_bot_response(selected_question, st.session_state.messages)
+            st.session_state.messages.append({"role": "assistant", "content": bot_response})
+            st.session_state.input_counter += 1
+            st.rerun()
     else:
         prefill = st.session_state.pop("prefill_input", "") if "prefill_input" in st.session_state else ""
     

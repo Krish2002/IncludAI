@@ -2,6 +2,7 @@ import re
 import streamlit as st
 import sys
 import os
+import json
 
 # Add the chatbot directory to the path so imports work
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -9,8 +10,16 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import FAQ_FILE_PATH
 
 def load_faq_data():
-    """Load FAQ data from the text file"""
+    """Load FAQ data from the JSON file"""
     try:
+        # Try to load from JSON file first
+        json_file_path = os.path.join(os.path.dirname(FAQ_FILE_PATH), 'faq_data.json')
+        if os.path.exists(json_file_path):
+            with open(json_file_path, 'r', encoding='utf-8') as file:
+                data = json.load(file)
+                return data.get('faqs', [])
+        
+        # Fallback to text file if JSON doesn't exist
         with open(FAQ_FILE_PATH, 'r', encoding='utf-8') as file:
             content = file.read()
         
@@ -31,7 +40,8 @@ def load_faq_data():
                 if current_question and current_answer:
                     faq_data.append({
                         'question': current_question,
-                        'answer': ' '.join(current_answer).strip()
+                        'answer': ' '.join(current_answer).strip(),
+                        'acronym': 'FAQ'  # Default acronym for text file
                     })
                 
                 # Start new question
@@ -45,13 +55,19 @@ def load_faq_data():
         if current_question and current_answer:
             faq_data.append({
                 'question': current_question,
-                'answer': ' '.join(current_answer).strip()
+                'answer': ' '.join(current_answer).strip(),
+                'acronym': 'FAQ'  # Default acronym for text file
             })
         
         return faq_data
     except Exception as e:
         st.error(f"Error loading FAQ file: {str(e)}")
         return []
+
+def get_faq_acronyms():
+    """Get list of FAQ acronyms for suggestion box"""
+    faq_data = load_faq_data()
+    return [item.get('acronym', 'FAQ') for item in faq_data]
 
 def search_faq(user_question, faq_data):
     """Search FAQ for relevant answers"""

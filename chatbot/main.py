@@ -6,7 +6,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import PAGE_CONFIG, COMPANY_NAME
-from faq_handler import load_faq_data
+from faq_handler import load_faq_data, get_faq_acronyms
 from ui_components import apply_custom_css, render_header, render_message, render_chat_input, render_faq_suggestions
 from ai_service import get_bot_response
 
@@ -48,34 +48,22 @@ def main():
     )
     prefill = ""
     faq_data = load_faq_data()
-    # Define or extract short FAQ topics (max 2 words)
-    def extract_topic(question):
-        # Use the first 2 significant words (skip numbers and stopwords)
-        import re
-        stopwords = {"what", "how", "can", "do", "is", "the", "a", "of", "on", "to", "for", "and", "in", "i", "you", "we", "your", "our", "with", "it", "are", "be", "an", "if", "or", "at", "by", "as", "from", "me", "my"}
-        words = re.findall(r"\w+", question.lower())
-        topic_words = [w.capitalize() for w in words if w not in stopwords and not w.isdigit()][:2]
-        return " ".join(topic_words) if topic_words else question[:15]
-    faq_topics = [extract_topic(item['question']) for item in faq_data]
-    # Remove duplicates while preserving order
-    seen = set()
-    unique_faq_topics = []
-    for t in faq_topics:
-        if t and t not in seen:
-            unique_faq_topics.append(t)
-            seen.add(t)
+    
+    # Get FAQ acronyms for suggestion box
+    faq_acronyms = get_faq_acronyms()
+    
     # Contextual suggestions: if user has asked something, show related topics
     if show_suggestions:
-        suggestions = unique_faq_topics[:8]
-        selected_question = render_faq_suggestions(suggestions)
-        if selected_question:
-            # Find the full FAQ question that matches the topic
+        suggestions = faq_acronyms[:8]
+        selected_acronym = render_faq_suggestions(suggestions)
+        if selected_acronym:
+            # Find the full FAQ question that matches the acronym
             for item in faq_data:
-                if extract_topic(item['question']) == selected_question:
+                if item.get('acronym') == selected_acronym:
                     selected_full_question = item['question']
                     break
             else:
-                selected_full_question = selected_question
+                selected_full_question = selected_acronym
             st.session_state.messages.append({"role": "user", "content": selected_full_question})
             with st.spinner(""):
                 bot_response = get_bot_response(selected_full_question, st.session_state.messages)
@@ -90,22 +78,28 @@ def main():
                 last_user_message = m["content"].lower()
                 break
         if last_user_message:
-            # Find FAQ topics that share a word with the last user message
+            # Find FAQ acronyms that might be related to the last user message
             related = []
-            for idx, t in enumerate(unique_faq_topics):
-                topic_words = set(t.lower().split())
-                if any(word in last_user_message for word in topic_words):
-                    related.append(t)
-            # Fallback to general topics if none found
-            suggestions = related[:4] if related else unique_faq_topics[:4]
-            selected_question = render_faq_suggestions(suggestions)
-            if selected_question:
+            for item in faq_data:
+                acronym = item.get('acronym', '').lower()
+                question_lower = item['question'].lower()
+                answer_lower = item['answer'].lower()
+                
+                # Check if any word from the user message appears in the FAQ
+                user_words = set(last_user_message.split())
+                if any(word in question_lower or word in answer_lower for word in user_words if len(word) > 2):
+                    related.append(item.get('acronym', 'FAQ'))
+            
+            # Fallback to general acronyms if none found
+            suggestions = related[:4] if related else faq_acronyms[:4]
+            selected_acronym = render_faq_suggestions(suggestions)
+            if selected_acronym:
                 for item in faq_data:
-                    if extract_topic(item['question']) == selected_question:
+                    if item.get('acronym') == selected_acronym:
                         selected_full_question = item['question']
                         break
                 else:
-                    selected_full_question = selected_question
+                    selected_full_question = selected_acronym
                 st.session_state.messages.append({"role": "user", "content": selected_full_question})
                 with st.spinner(""):
                     bot_response = get_bot_response(selected_full_question, st.session_state.messages)

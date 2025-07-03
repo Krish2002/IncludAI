@@ -1,6 +1,9 @@
 import streamlit as st
 import sys
 import os
+import tempfile
+import speech_recognition as sr
+from streamlit_mic_recorder import mic_recorder
 
 # Add the chatbot directory to the path so imports work
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -123,6 +126,20 @@ def apply_custom_css():
             padding: 0.5rem 1rem;
         }}
         
+        .voice-input-section {{
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            border: 2px solid #007bff;
+        }}
+        
+        .voice-status {{
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            border-radius: 5px;
+        }}
+        
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         header {{visibility: hidden;}}
@@ -219,3 +236,73 @@ def render_chat_input(prefill=""):
             submit_button = st.form_submit_button("Send", use_container_width=True)
     
     return user_input, submit_button 
+
+def render_voice_input():
+    """Render voice input section with microphone recorder"""
+    st.markdown("""
+    <div class="voice-input-section">
+        <h4>🎤 Voice Input</h4>
+        <p>Click the microphone to record your message</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Create microphone recorder
+    audio = mic_recorder(
+        key="mic_recorder",
+        use_container_width=True,
+        sample_rate=16000,
+        chunk_length_s=5,
+        text="Click to record",
+        recording_color="#e74c3c",
+        neutral_color="#6c757d",
+        icon_name="microphone",
+        icon_size="2x"
+    )
+    
+    transcript = ""
+    
+    if audio:
+        # Show processing status
+        with st.status("Processing audio...", expanded=True) as status:
+            st.write("Transcribing your voice...")
+            
+            try:
+                # Save audio to temporary file
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
+                    tmpfile.write(audio['bytes'])
+                    tmpfile.flush()
+                    
+                    # Initialize speech recognizer
+                    recognizer = sr.Recognizer()
+                    
+                    # Read the audio file
+                    with sr.AudioFile(tmpfile.name) as source:
+                        # Adjust for ambient noise
+                        recognizer.adjust_for_ambient_noise(source, duration=0.5)
+                        # Record the audio
+                        audio_data = recognizer.record(source)
+                        
+                        # Transcribe using Google Speech Recognition
+                        transcript = recognizer.recognize_google(audio_data)
+                        
+                        status.update(label="✅ Transcription complete!", state="complete")
+                        st.success(f"**Transcribed:** {transcript}")
+                        
+            except sr.UnknownValueError:
+                status.update(label="❌ Could not understand audio", state="error")
+                st.error("Sorry, I couldn't understand what you said. Please try again.")
+            except sr.RequestError as e:
+                status.update(label="❌ Transcription service error", state="error")
+                st.error(f"Could not request results from speech recognition service; {e}")
+            except Exception as e:
+                status.update(label="❌ Error processing audio", state="error")
+                st.error(f"An error occurred while processing the audio: {e}")
+            finally:
+                # Clean up temporary file
+                if 'tmpfile' in locals():
+                    try:
+                        os.unlink(tmpfile.name)
+                    except:
+                        pass
+    
+    return transcript 

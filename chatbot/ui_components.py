@@ -159,13 +159,13 @@ def render_message(message):
         """, unsafe_allow_html=True)
 
 def render_faq_suggestions(faq_questions):
-    """Render up to 6 FAQ suggestion buttons in a right-aligned row, wrapping to multiple lines if needed."""
+    """Render up to 6 FAQ suggestion buttons in a horizontal row, wrapping to multiple lines if needed, left-aligned."""
     st.markdown("""
     <style>
     .suggestion-bubble {
         display: flex;
         flex-wrap: wrap;
-        justify-content: flex-end;
+        justify-content: flex-start;
         margin-bottom: 1rem;
         margin-right: 0;
     }

@@ -159,26 +159,33 @@ def render_message(message):
         """, unsafe_allow_html=True)
 
 def render_faq_suggestions(faq_questions):
-    """Render up to 6 FAQ suggestion buttons in a horizontal row using columns, with soft pineapple yellow background (force override)."""
+    """Render up to 6 FAQ suggestion buttons in a horizontal row using columns, with soft pineapple yellow background (force override), and fix overlap. Keep 'Clear Chat' button white."""
     st.markdown("""
     <style>
-    .suggestion-btn, .stButton > button {
+    .suggestion-btn, .stButton > button[data-testid^="suggestion_"] {
         background: #FFE066 !important;
         color: #333 !important;
         border: none;
         border-radius: 18px !important;
-        padding: 0.3rem 1rem !important;
-        margin: 0.2rem 0.2rem 0.2rem 0 !important;
+        padding: 0.3rem 1.5rem !important;
+        margin: 0.2rem 0.5rem 0.2rem 0 !important;
         font-size: 0.95rem !important;
+        min-width: 120px;
         cursor: pointer;
         transition: background 0.2s;
         box-shadow: 0 1px 4px rgba(0,0,0,0.07);
         display: inline-block;
         white-space: nowrap;
     }
-    .suggestion-btn:hover, .stButton > button:hover {
+    .suggestion-btn:hover, .stButton > button[data-testid^="suggestion_"]:hover {
         background: #FFD23F !important;
         color: #222 !important;
+    }
+    /* Keep the Clear Chat button white */
+    .stButton > button:has(span:contains('Clear Chat')) {
+        background: #fff !important;
+        color: #333 !important;
+        border: 1px solid #e0e0e0 !important;
     }
     </style>
     """, unsafe_allow_html=True)

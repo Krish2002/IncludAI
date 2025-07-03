@@ -2,13 +2,11 @@ import streamlit as st
 import sys
 import os
 import tempfile
-import speech_recognition as sr
-from streamlit_mic_recorder import mic_recorder
 
 # Add the chatbot directory to the path so imports work
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import COMPANY_NAME, COMPANY_DESCRIPTION, COMPANY_LOGO_URL
+from config import COMPANY_NAME, COMPANY_DESCRIPTION, COMPANY_LOGO_URL, VOICE_INPUT_CONFIG
 from utils import get_logo_base64
 
 def apply_custom_css():
@@ -216,6 +214,116 @@ def render_faq_suggestions(faq_questions):
         return clicked
     return None
 
+def transcribe_audio_with_whisper(audio_file_path):
+    """Transcribe audio using OpenAI Whisper API if available"""
+    # Check if Whisper is enabled in config
+    if not VOICE_INPUT_CONFIG.get("use_whisper", True):
+        return None, "Automatic transcription is disabled in configuration."
+    
+    try:
+        import openai
+        from openai import OpenAI
+        
+        # Check if OpenAI API key is available
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            return None, "OpenAI API key not found. Please set OPENAI_API_KEY environment variable."
+        
+        client = OpenAI(api_key=api_key)
+        
+        with open(audio_file_path, "rb") as audio_file:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file
+            )
+        
+        return transcript.text, None
+        
+    except ImportError:
+        return None, "OpenAI package not installed. Run: pip install openai"
+    except Exception as e:
+        return None, f"Transcription error: {str(e)}"
+
+def render_voice_input():
+    """Render voice input section with file upload for audio files"""
+    st.markdown("""
+    <div class="voice-input-section">
+        <h4>🎤 Voice Input</h4>
+        <p>Upload an audio file to transcribe your message</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Get supported formats from config
+    supported_formats = VOICE_INPUT_CONFIG.get("supported_formats", ["wav", "mp3", "m4a", "ogg"])
+    max_file_size = VOICE_INPUT_CONFIG.get("max_file_size_mb", 25)
+    
+    # File uploader for audio files
+    uploaded_file = st.file_uploader(
+        f"Choose an audio file (max {max_file_size}MB)",
+        type=supported_formats,
+        key="audio_uploader",
+        help=f"Upload an audio file ({', '.join(supported_formats)}) to transcribe your message"
+    )
+    
+    transcript = ""
+    
+    if uploaded_file is not None:
+        # Check file size
+        file_size_mb = uploaded_file.size / (1024 * 1024)
+        if file_size_mb > max_file_size:
+            st.error(f"File too large! Maximum size is {max_file_size}MB. Your file is {file_size_mb:.1f}MB.")
+            return ""
+        
+        # Show file info
+        st.info(f"📁 File uploaded: {uploaded_file.name} ({file_size_mb:.1f}MB)")
+        
+        # Show processing status
+        with st.status("Processing audio...", expanded=True) as status:
+            st.write("Transcribing your audio file...")
+            
+            try:
+                # Save uploaded file to temporary file
+                with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmpfile:
+                    tmpfile.write(uploaded_file.getvalue())
+                    tmpfile.flush()
+                    
+                    # Try automatic transcription with Whisper
+                    auto_transcript, error_msg = transcribe_audio_with_whisper(tmpfile.name)
+                    
+                    if auto_transcript:
+                        transcript = auto_transcript
+                        status.update(label="✅ Automatic transcription complete!", state="complete")
+                        st.success(f"**Transcribed:** {transcript}")
+                    else:
+                        # Fallback to manual transcription
+                        st.warning(f"⚠️ {error_msg}")
+                        st.info("Please type your message manually below:")
+                        
+                        # Provide a text input for manual transcription
+                        manual_transcript = st.text_input(
+                            "Type your message here:",
+                            key="manual_transcript",
+                            placeholder="Type what you said in the audio..."
+                        )
+                        
+                        if manual_transcript:
+                            transcript = manual_transcript
+                            status.update(label="✅ Manual transcription complete!", state="complete")
+                            st.success(f"**Message:** {transcript}")
+                
+            except Exception as e:
+                status.update(label="❌ Error processing audio", state="error")
+                st.error(f"An error occurred while processing the audio: {e}")
+            finally:
+                # Clean up temporary file
+                if 'tmpfile' in locals():
+                    try:
+                        os.unlink(tmpfile.name)
+                    except:
+                        pass
+    
+    return transcript
+
 def render_chat_input(prefill=""):
     """Render the chat input form"""
     with st.form(key="user_input_form"):
@@ -236,73 +344,3 @@ def render_chat_input(prefill=""):
             submit_button = st.form_submit_button("Send", use_container_width=True)
     
     return user_input, submit_button 
-
-def render_voice_input():
-    """Render voice input section with microphone recorder"""
-    st.markdown("""
-    <div class="voice-input-section">
-        <h4>🎤 Voice Input</h4>
-        <p>Click the microphone to record your message</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Create microphone recorder
-    audio = mic_recorder(
-        key="mic_recorder",
-        use_container_width=True,
-        sample_rate=16000,
-        chunk_length_s=5,
-        text="Click to record",
-        recording_color="#e74c3c",
-        neutral_color="#6c757d",
-        icon_name="microphone",
-        icon_size="2x"
-    )
-    
-    transcript = ""
-    
-    if audio:
-        # Show processing status
-        with st.status("Processing audio...", expanded=True) as status:
-            st.write("Transcribing your voice...")
-            
-            try:
-                # Save audio to temporary file
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
-                    tmpfile.write(audio['bytes'])
-                    tmpfile.flush()
-                    
-                    # Initialize speech recognizer
-                    recognizer = sr.Recognizer()
-                    
-                    # Read the audio file
-                    with sr.AudioFile(tmpfile.name) as source:
-                        # Adjust for ambient noise
-                        recognizer.adjust_for_ambient_noise(source, duration=0.5)
-                        # Record the audio
-                        audio_data = recognizer.record(source)
-                        
-                        # Transcribe using Google Speech Recognition
-                        transcript = recognizer.recognize_google(audio_data)
-                        
-                        status.update(label="✅ Transcription complete!", state="complete")
-                        st.success(f"**Transcribed:** {transcript}")
-                        
-            except sr.UnknownValueError:
-                status.update(label="❌ Could not understand audio", state="error")
-                st.error("Sorry, I couldn't understand what you said. Please try again.")
-            except sr.RequestError as e:
-                status.update(label="❌ Transcription service error", state="error")
-                st.error(f"Could not request results from speech recognition service; {e}")
-            except Exception as e:
-                status.update(label="❌ Error processing audio", state="error")
-                st.error(f"An error occurred while processing the audio: {e}")
-            finally:
-                # Clean up temporary file
-                if 'tmpfile' in locals():
-                    try:
-                        os.unlink(tmpfile.name)
-                    except:
-                        pass
-    
-    return transcript 

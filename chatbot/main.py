@@ -5,7 +5,7 @@ import os
 # Add the chatbot directory to the path so imports work
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import PAGE_CONFIG, COMPANY_NAME
+from config import PAGE_CONFIG, COMPANY_NAME, VOICE_INPUT_CONFIG
 from faq_handler import load_faq_data, get_faq_acronyms
 from ui_components import apply_custom_css, render_header, render_message, render_chat_input, render_faq_suggestions, render_voice_input
 from ai_service import get_bot_response
@@ -111,8 +111,10 @@ def main():
     # Add a separator between chat and input
     st.markdown("---")
     
-    # Render voice input
-    voice_transcript = render_voice_input()
+    # Render voice input if enabled
+    voice_transcript = ""
+    if VOICE_INPUT_CONFIG["enabled"]:
+        voice_transcript = render_voice_input()
     
     # Render chat input
     user_input, submit_button = render_chat_input(prefill)

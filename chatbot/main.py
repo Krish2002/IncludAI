@@ -28,8 +28,8 @@ def main():
     # Add a default welcome message if the chat is empty
     if not st.session_state.messages:
         DEFAULT_WELCOME = (
-            "Bonjour ! Je suis l'assistant virtuel de {company}. "
-            "Voici les sujets sur lesquels je peux répondre à vos questions :"
+            "Hello! I am the virtual assistant for {company}. "
+            "Here are some topics I can help you with:"
         ).format(company=COMPANY_NAME)
         st.session_state.messages.append({"role": "assistant", "content": DEFAULT_WELCOME})
     
@@ -47,20 +47,71 @@ def main():
         st.session_state.messages[0]["role"] == "assistant"
     )
     prefill = ""
+    faq_data = load_faq_data()
+    # Define or extract short FAQ topics (max 2 words)
+    def extract_topic(question):
+        # Use the first 2 significant words (skip numbers and stopwords)
+        import re
+        stopwords = {"what", "how", "can", "do", "is", "the", "a", "of", "on", "to", "for", "and", "in", "i", "you", "we", "your", "our", "with", "it", "are", "be", "an", "if", "or", "at", "by", "as", "from", "me", "my"}
+        words = re.findall(r"\w+", question.lower())
+        topic_words = [w.capitalize() for w in words if w not in stopwords and not w.isdigit()][:2]
+        return " ".join(topic_words) if topic_words else question[:15]
+    faq_topics = [extract_topic(item['question']) for item in faq_data]
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_faq_topics = []
+    for t in faq_topics:
+        if t and t not in seen:
+            unique_faq_topics.append(t)
+            seen.add(t)
+    # Contextual suggestions: if user has asked something, show related topics
     if show_suggestions:
-        faq_data = load_faq_data()
-        faq_questions = [item['question'] for item in faq_data][:8]
-        selected_question = render_faq_suggestions(faq_questions)
+        suggestions = unique_faq_topics[:8]
+        selected_question = render_faq_suggestions(suggestions)
         if selected_question:
-            # Add the selected question as a user message
-            st.session_state.messages.append({"role": "user", "content": selected_question})
-            # Get bot response
+            # Find the full FAQ question that matches the topic
+            for item in faq_data:
+                if extract_topic(item['question']) == selected_question:
+                    selected_full_question = item['question']
+                    break
+            else:
+                selected_full_question = selected_question
+            st.session_state.messages.append({"role": "user", "content": selected_full_question})
             with st.spinner(""):
-                bot_response = get_bot_response(selected_question, st.session_state.messages)
+                bot_response = get_bot_response(selected_full_question, st.session_state.messages)
             st.session_state.messages.append({"role": "assistant", "content": bot_response})
             st.session_state.input_counter += 1
             st.rerun()
     else:
+        # After user message, show suggestions related to last user message
+        last_user_message = None
+        for m in reversed(st.session_state.messages):
+            if m["role"] == "user":
+                last_user_message = m["content"].lower()
+                break
+        if last_user_message:
+            # Find FAQ topics that share a word with the last user message
+            related = []
+            for idx, t in enumerate(unique_faq_topics):
+                topic_words = set(t.lower().split())
+                if any(word in last_user_message for word in topic_words):
+                    related.append(t)
+            # Fallback to general topics if none found
+            suggestions = related[:4] if related else unique_faq_topics[:4]
+            selected_question = render_faq_suggestions(suggestions)
+            if selected_question:
+                for item in faq_data:
+                    if extract_topic(item['question']) == selected_question:
+                        selected_full_question = item['question']
+                        break
+                else:
+                    selected_full_question = selected_question
+                st.session_state.messages.append({"role": "user", "content": selected_full_question})
+                with st.spinner(""):
+                    bot_response = get_bot_response(selected_full_question, st.session_state.messages)
+                st.session_state.messages.append({"role": "assistant", "content": bot_response})
+                st.session_state.input_counter += 1
+                st.rerun()
         prefill = st.session_state.pop("prefill_input", "") if "prefill_input" in st.session_state else ""
     
     # Render chat input

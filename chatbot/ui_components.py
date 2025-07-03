@@ -159,7 +159,7 @@ def render_message(message):
         """, unsafe_allow_html=True)
 
 def render_faq_suggestions(faq_questions):
-    """Render FAQ suggestion buttons as a right-aligned, filled, compact bubble."""
+    """Render up to 6 FAQ suggestion buttons in a right-aligned row, wrapping to multiple lines if needed."""
     st.markdown("""
     <style>
     .suggestion-bubble {
@@ -181,6 +181,7 @@ def render_faq_suggestions(faq_questions):
         transition: background 0.2s;
         box-shadow: 0 1px 4px rgba(0,0,0,0.07);
         display: inline-block;
+        white-space: nowrap;
     }
     .suggestion-btn:hover {
         background: #0056b3;
@@ -190,7 +191,7 @@ def render_faq_suggestions(faq_questions):
 
     st.markdown('<div class="suggestion-bubble">', unsafe_allow_html=True)
     clicked = None
-    for idx, question in enumerate(faq_questions):
+    for idx, question in enumerate(faq_questions[:6]):
         if st.button(question, key=f"suggestion_{idx}"):
             clicked = question
     st.markdown('</div>', unsafe_allow_html=True)

@@ -188,15 +188,14 @@ def render_faq_suggestions(faq_questions):
     </style>
     """, unsafe_allow_html=True)
 
-    with st.form(key="suggestion_form", clear_on_submit=True):
-        st.markdown('<div class="suggestion-bubble">', unsafe_allow_html=True)
-        clicked = None
-        for idx, question in enumerate(faq_questions):
-            if st.form_submit_button(question, key=f"suggestion_{idx}"):
-                clicked = question
-        st.markdown('</div>', unsafe_allow_html=True)
-        if clicked:
-            return clicked
+    st.markdown('<div class="suggestion-bubble">', unsafe_allow_html=True)
+    clicked = None
+    for idx, question in enumerate(faq_questions):
+        if st.button(question, key=f"suggestion_{idx}"):
+            clicked = question
+    st.markdown('</div>', unsafe_allow_html=True)
+    if clicked:
+        return clicked
     return None
 
 def render_chat_input(prefill=""):

@@ -159,12 +159,12 @@ def render_message(message):
         """, unsafe_allow_html=True)
 
 def render_faq_suggestions(faq_questions):
-    """Render up to 6 FAQ suggestion buttons in a horizontal row using columns."""
+    """Render up to 6 FAQ suggestion buttons in a horizontal row using columns, with soft pineapple yellow background."""
     st.markdown("""
     <style>
     .suggestion-btn {
-        background: #007bff;
-        color: white;
+        background: #FFE066;
+        color: #333;
         border: none;
         border-radius: 18px;
         padding: 0.3rem 1rem;
@@ -177,7 +177,7 @@ def render_faq_suggestions(faq_questions):
         white-space: nowrap;
     }
     .suggestion-btn:hover {
-        background: #0056b3;
+        background: #FFD23F;
     }
     </style>
     """, unsafe_allow_html=True)
